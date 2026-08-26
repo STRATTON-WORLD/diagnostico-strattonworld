@@ -1,3 +1,10 @@
+import Fondo from '@/componentes/Fondo';
+
 export default function App() {
-  return <main className="contenedor" />;
+  return (
+    <>
+      <Fondo />
+      <main className="contenedor" />
+    </>
+  );
 }

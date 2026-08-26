@@ -98,12 +98,14 @@
 
   /* Textura de fondo (§4.4): ruido fino, fijo, sin animar, al 4 %.
      El feColorMatrix desatura el turbulence: sin el, el ruido lleva
-     pixeles de color, y §13 prohibe el violeta en cualquier elemento. */
-  body::before {
-    content: '';
+     pixeles de color, y §13 prohibe el violeta en cualquier elemento.
+     La renderiza <Fondo />. */
+  .textura {
     position: fixed;
     inset: 0;
-    z-index: 0;
+    /* #root abre contexto de apilado; -1 la deja detrás del contenido
+       sin taparse con el fondo del body. */
+    z-index: -1;
     pointer-events: none;
     opacity: 0.04;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23n)'/%3E%3C/svg%3E");
