@@ -22,10 +22,14 @@ export interface Rango {
   valor: number; // horas semanales, punto medio del rango
 }
 
-/** Una respuesta del cuestionario. `rango` solo existe si `si` es true. */
+/**
+ * Una respuesta del cuestionario.
+ * `si` es null mientras la pregunta está sin responder.
+ * `rango` solo existe si `si` es true.
+ */
 export interface Respuesta {
   zonaId: number;
-  si: boolean;
+  si: boolean | null;
   rango: RangoId | null;
 }
 
