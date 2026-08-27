@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import Fondo from '@/componentes/Fondo';
 import Captura from '@/pantallas/Captura';
 import Pregunta from '@/pantallas/Pregunta';
+import ResultadoCompleto from '@/pantallas/ResultadoCompleto';
 import ResultadoParcial from '@/pantallas/ResultadoParcial';
 import {
   ContextoDiagnostico,
@@ -81,7 +82,8 @@ export default function App() {
         {estado.pantalla === 'pregunta' && <Pregunta />}
         {estado.pantalla === 'parcial' && <ResultadoParcial />}
         {estado.pantalla === 'captura' && <Captura />}
-        {/* hero: Fase 9 · completo: Fase 7 */}
+        {estado.pantalla === 'completo' && <ResultadoCompleto />}
+        {/* hero: Fase 9 */}
       </div>
     </ContextoDiagnostico.Provider>
   );
