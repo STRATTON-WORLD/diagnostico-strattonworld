@@ -12,4 +12,5 @@ export {
   porQuePosicion,
   type Esfuerzo,
   type Zona,
+  type DatoCitado,
 } from '../../supabase/functions/_shared/zonas.ts';

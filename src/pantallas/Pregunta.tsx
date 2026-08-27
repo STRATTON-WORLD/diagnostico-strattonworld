@@ -102,6 +102,31 @@ export default function Pregunta() {
         </TarjetaOpcion>
       </div>
 
+      {/* Se muestra al responder «Sí», antes de pedir las horas: primero la
+          solución, luego un dato externo solo si tiene fuente verificada.
+          `solucion` es opcional en los datos — las zonas que aún no lo
+          tienen simplemente no muestran este bloque. */}
+      {respuesta.si === true && zona.solucion && (
+        <div className="aparece mt-8 rounded-xl border border-borde bg-fondo-elevado p-5">
+          <p className="etiqueta mb-2 text-texto-suave">La solución</p>
+          <p className="text-[15px] leading-relaxed text-texto">{zona.solucion}</p>
+
+          {zona.dato && (
+            <div className="mt-4 border-t border-borde pt-4">
+              <p className="text-[14px] leading-relaxed text-texto-suave">{zona.dato.texto}</p>
+              <a
+                href={zona.dato.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-block text-[13px] text-texto-suave underline underline-offset-4 hover:text-texto"
+              >
+                Fuente: {zona.dato.fuente}
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+
       {respuesta.si === true && (
         <div className="aparece mt-8">
           <p id={idPreguntaHoras} className="mb-4 text-[17px] text-texto-suave">

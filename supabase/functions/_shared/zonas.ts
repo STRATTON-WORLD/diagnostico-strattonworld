@@ -9,11 +9,26 @@
 
 export type Esfuerzo = 'bajo' | 'medio' | 'alto';
 
+/** Un dato externo citable: nunca se muestra sin fuente comprobable. */
+export interface DatoCitado {
+  texto: string;
+  fuente: string;
+  url: string;
+}
+
 export interface Zona {
   id: number; // 1-8, define tambien el orden y el desempate final
   nombre: string;
   afirmacion: string;
   esfuerzo: Esfuerzo;
+  /**
+   * Pregunta 1-8: se muestra al responder «Sí», antes de pedir las horas
+   * semanales. Opcional a propósito — no se inventa para las zonas que
+   * todavía no lo tienen; en esas, la pregunta se comporta como antes.
+   */
+  solucion?: string;
+  /** Acompaña a `solucion`. Solo con fuente verificada, nunca de relleno. */
+  dato?: DatoCitado;
   queCuesta: string; // pantalla 11: consecuencia
   acciones: string[]; // pantalla 11: 2-3 acciones realistas
 }
@@ -45,6 +60,14 @@ const DEFINICIONES: Zona[] = [
     afirmacion:
       'Si un cliente nos escribe un sábado por la tarde, no recibe respuesta hasta el lunes.',
     esfuerzo: 'bajo',
+    solucion:
+      'La solución es implantar un sistema personalizado para la gestión de la primera respuesta.',
+    dato: {
+      texto:
+        'Los leads contactados en menos de 5 minutos tienen 100 veces más probabilidades de convertirse en clientes que los contactados después de 30, y casi 8 de cada 10 compran con la primera empresa que les responde.',
+      fuente: 'HubSpot y Vendasta',
+      url: 'https://www.patagon.ai/es/blog-posts/el-verdadero-costo-de-responder-lento-como-cada-minuto-impacta-tus-ventas',
+    },
     queCuesta:
       'Un cliente que escribe fuera de horario y no recibe señal en 48 horas rara vez espera: escribe al siguiente. No aparece como una pérdida en ningún sitio, y por eso cuesta verlo.',
     acciones: [
