@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import Fondo from '@/componentes/Fondo';
+import Captura from '@/pantallas/Captura';
 import Pregunta from '@/pantallas/Pregunta';
 import ResultadoParcial from '@/pantallas/ResultadoParcial';
 import {
   ContextoDiagnostico,
   ESTADO_INICIAL,
   guardarEstado,
+  limpiarEstado,
   leerEstado,
   reductor,
   type Accion,
@@ -63,9 +65,11 @@ export default function App() {
     return () => window.removeEventListener('popstate', alRetroceder);
   }, []);
 
-  // §8.12 — El progreso se guarda en cada respuesta.
+  // §8.12 — El progreso se guarda en cada respuesta y se limpia al completar
+  // la pantalla 10.
   useEffect(() => {
-    guardarEstado(estado);
+    if (estado.pantalla === 'completo') limpiarEstado();
+    else guardarEstado(estado);
   }, [estado]);
 
   const contexto = useMemo(() => ({ estado, navegar, actualizar }), [estado, navegar, actualizar]);
@@ -76,7 +80,8 @@ export default function App() {
       <div className="contenedor">
         {estado.pantalla === 'pregunta' && <Pregunta />}
         {estado.pantalla === 'parcial' && <ResultadoParcial />}
-        {/* hero: Fase 9 · captura: Fase 6 · completo: Fase 7 */}
+        {estado.pantalla === 'captura' && <Captura />}
+        {/* hero: Fase 9 · completo: Fase 7 */}
       </div>
     </ContextoDiagnostico.Provider>
   );

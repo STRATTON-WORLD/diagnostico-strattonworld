@@ -56,6 +56,28 @@
   /* Unico color fuera de la paleta de §4.1: los errores de formulario
      de §8.10 piden "rojo sobrio". No se usa en ningun otro sitio. */
   --error: #f87171;
+
+  /* Nombres semanticos que esperan los componentes de shadcn/ui (§2),
+     apuntando a la paleta de §4.1. Ni un color nuevo. */
+  --background: var(--fondo);
+  --foreground: var(--texto);
+  --card: var(--fondo-elevado);
+  --card-foreground: var(--texto);
+  --popover: var(--fondo-elevado);
+  --popover-foreground: var(--texto);
+  --primary: var(--acento);
+  --primary-foreground: var(--texto);
+  --secondary: var(--fondo-elevado);
+  --secondary-foreground: var(--texto);
+  --muted: var(--fondo-elevado);
+  --muted-foreground: var(--texto-suave);
+  --accent: var(--acento-tenue);
+  --accent-foreground: var(--texto);
+  --destructive: var(--error);
+  --border: var(--borde);
+  --input: var(--borde);
+  --ring: var(--acento);
+  --radius: 0.75rem;
 }
 
 @theme {
