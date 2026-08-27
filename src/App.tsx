@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import Fondo from '@/componentes/Fondo';
 import Captura from '@/pantallas/Captura';
+import Hero from '@/pantallas/Hero';
 import Pregunta from '@/pantallas/Pregunta';
 import ResultadoCompleto from '@/pantallas/ResultadoCompleto';
 import ResultadoParcial from '@/pantallas/ResultadoParcial';
@@ -24,10 +25,7 @@ import {
  */
 
 function estadoInicial(): EstadoDiagnostico {
-  const guardado = leerEstado();
-  if (guardado) return guardado;
-  // TEMPORAL hasta la Fase 9: la pantalla 0 todavía no existe.
-  return { ...ESTADO_INICIAL, pantalla: 'pregunta' };
+  return leerEstado() ?? ESTADO_INICIAL;
 }
 
 export default function App() {
@@ -79,11 +77,11 @@ export default function App() {
     <ContextoDiagnostico.Provider value={contexto}>
       <Fondo />
       <div className="contenedor">
+        {estado.pantalla === 'hero' && <Hero />}
         {estado.pantalla === 'pregunta' && <Pregunta />}
         {estado.pantalla === 'parcial' && <ResultadoParcial />}
         {estado.pantalla === 'captura' && <Captura />}
         {estado.pantalla === 'completo' && <ResultadoCompleto />}
-        {/* hero: Fase 9 */}
       </div>
     </ContextoDiagnostico.Provider>
   );
