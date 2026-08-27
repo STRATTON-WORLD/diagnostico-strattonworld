@@ -27,8 +27,12 @@ export interface Respuesta {
   rango: RangoId | null;
 }
 
+/** Posición en el ranking de prioridad: 1ª, 2ª o 3ª. Determina la frase `porQue` (§5). */
+export type Posicion = 1 | 2 | 3;
+
 export interface ZonaPrioritaria {
   zona: Zona;
+  posicion: Posicion;
   /** Horas mensuales que el usuario declara en esta zona concreta. */
   horasMes: number;
 }
@@ -55,7 +59,12 @@ export interface Lead {
   telefono: string | null;
   num_empleados: NumEmpleados;
   respuestas: Array<{ zona_id: number; si: boolean; rango: RangoId | null }>;
-  zonas_prioritarias: Array<{ zona_id: number; nombre: string; horas_mes: number }>;
+  zonas_prioritarias: Array<{
+    zona_id: number;
+    nombre: string;
+    horas_mes: number;
+    posicion: Posicion;
+  }>;
   horas_mes_calculadas: number;
   score_interno: ScoreInterno;
   consentimiento_rgpd: boolean;

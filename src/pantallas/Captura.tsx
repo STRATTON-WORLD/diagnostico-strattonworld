@@ -88,6 +88,7 @@ export default function Captura() {
         zona_id: p.zona.id,
         nombre: p.zona.nombre,
         horas_mes: horasParaGuardar(p.horasMes),
+        posicion: p.posicion,
       })),
       horas_mes_calculadas: horasParaGuardar(diagnostico.horasMes),
       score_interno: calcularScore({
@@ -114,6 +115,11 @@ export default function Captura() {
 
   return (
     <section className="aparece flex min-h-dvh flex-col justify-center py-12">
+      <h1 className="mb-3 text-[28px] sm:text-[36px]">Ya sabemos tus 3 zonas prioritarias</h1>
+      <p className="mb-10 text-texto-suave">
+        Dinos dónde enviamos el desglose completo — qué hacer primero, y qué no tocar todavía.
+      </p>
+
       <form onSubmit={enviar} noValidate className="space-y-6">
         <Campo
           id={idNombre}

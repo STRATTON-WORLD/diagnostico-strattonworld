@@ -225,11 +225,13 @@ export interface Zona {
 - *queCuesta:* «Sin saber cuántas oportunidades entran y cuántas se caen, cualquier decisión sobre precios, personal o publicidad se toma a ciegas.»
 - *acciones:* Registrar toda oportunidad entrante en un único sitio, con su estado · Una cifra semanal: cuántas entraron, cuántas se ganaron, cuántas se perdieron y por qué · Quince minutos de revisión al cerrar la semana
 
-**Frase `porQue`** — se compone según el esfuerzo de la zona:
+**Frase `porQue`** — se compone según **la posición real en el ranking**, no según el esfuerzo de la zona:
 
-- bajo → «Sale primero porque es donde más tiempo pierdes y donde antes se nota la mejora.»
-- medio → «Sale arriba porque el tiempo que pierdes compensa el trabajo de ordenar antes el proceso.»
-- alto → «Es la más laboriosa de las tres, pero las horas que declaras la colocan aquí de todas formas.»
+- Posición 1 → «Te sale primero porque es donde más tiempo pierdes y donde antes se nota la mejora.»
+- Posición 2 → «Es tu segunda prioridad: sigue siendo terreno donde recuperas bastante tiempo con relativamente poco esfuerzo.»
+- Posición 3 → «Completa tus tres zonas prioritarias. El impacto es algo menor que en las anteriores, pero conviene no perderla de vista.»
+
+Componerla desde el esfuerzo era un fallo de lógica: una zona de esfuerzo bajo puede quedar tercera, y decirle al usuario que «sale primero» algo que es su tercera prioridad rompe la confianza justo en la pantalla que más la necesita. Por eso `porQue` no es un campo de la zona: es una función de la posición.
 
 ---
 
@@ -349,6 +351,8 @@ La pantalla que decide la conversión. **Este es el momento característico de l
 
 ### 8.10 — Captura
 
+- **Titular:** «Ya sabemos tus 3 zonas prioritarias»
+- **Subtitular:** «Dinos dónde enviamos el desglose completo — qué hacer primero, y qué no tocar todavía.»
 - Campos, en este orden: Nombre (obligatorio) · Email profesional (obligatorio, validación de formato) · Número de empleados (obligatorio, desplegable: `1 (autónomo)` / `2-5` / `6-10`) · Teléfono (opcional, con microcopy «Solo si quieres que te llamemos para hablar de tu caso»).
 - **No se añade ningún campo más.** Ni sector, ni web, ni cargo.
 - **Checkbox RGPD**, desmarcado por defecto, después de los campos y justo antes del botón: «Acepto recibir mi diagnóstico y comunicaciones de STRATTONWORLD por email. Puedes darte de baja cuando quieras. [Política de privacidad]».
@@ -412,7 +416,8 @@ create policy "insert publico" on public.leads
 
 ```sql
 create or replace function public.contar_diagnosticos()
-returns integer language sql security definer stable as $$
+returns integer language sql security definer stable
+set search_path = public as $$
   select count(*)::integer from public.leads;
 $$;
 
@@ -420,6 +425,11 @@ grant execute on function public.contar_diagnosticos() to anon;
 ```
 
 Devuelve un entero y nada más. Es la única vía por la que el frontend toca esa tabla en lectura.
+
+`set search_path = public` cierra el aviso del linter de Supabase sobre funciones `security
+definer` sin `search_path` fijo: sin él, alguien con permiso para crear objetos en un esquema
+anterior en el `search_path` de la sesión podría hacer que la función resuelva a una tabla
+`leads` distinta de la que se espera.
 
 ---
 

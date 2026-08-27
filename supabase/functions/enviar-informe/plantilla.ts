@@ -1,4 +1,4 @@
-import { ZONAS } from '../_shared/zonas.ts';
+import { porQuePosicion, ZONAS } from '../_shared/zonas.ts';
 
 /**
  * §10 — Plantilla del email.
@@ -15,6 +15,8 @@ export interface ZonaDelInforme {
   zona_id: number;
   nombre: string;
   horas_mes: number;
+  /** 1ª, 2ª o 3ª. Determina la frase «por qué sale priorizada» (§5). */
+  posicion: 1 | 2 | 3;
 }
 
 export interface DatosInforme {
@@ -76,11 +78,13 @@ export function textoPlano(datos: DatosInforme): string {
   lineas.push('');
   lineas.push('TUS 3 ZONAS PRIORITARIAS');
 
-  datos.prioritarias.forEach((prioritaria, indice) => {
+  datos.prioritarias.forEach((prioritaria) => {
     const zona = contenidoDeZona(prioritaria.zona_id);
     lineas.push('');
-    lineas.push(`${indice + 1}. ${zona.nombre} — ${numero(prioritaria.horas_mes)} horas al mes`);
-    lineas.push(zona.porQue);
+    lineas.push(
+      `${prioritaria.posicion}. ${zona.nombre} — ${numero(prioritaria.horas_mes)} horas al mes`
+    );
+    lineas.push(porQuePosicion(prioritaria.posicion));
     for (const accion of zona.acciones) lineas.push(`- ${accion}`);
   });
 
@@ -95,7 +99,7 @@ export function textoPlano(datos: DatosInforme): string {
 
 export function html(datos: DatosInforme): string {
   const zonas = datos.prioritarias
-    .map((prioritaria, indice) => {
+    .map((prioritaria) => {
       const zona = contenidoDeZona(prioritaria.zona_id);
       const acciones = zona.acciones
         .map(
@@ -113,10 +117,10 @@ export function html(datos: DatosInforme): string {
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${COLOR_ELEVADO};border:1px solid ${COLOR_BORDE};border-radius:12px;">
               <tr>
                 <td style="padding:24px;">
-                  <p style="margin:0 0 6px 0;font-family:${MONO};font-size:14px;color:${COLOR_SUAVE};">${indice + 1}</p>
+                  <p style="margin:0 0 6px 0;font-family:${MONO};font-size:14px;color:${COLOR_SUAVE};">${prioritaria.posicion}</p>
                   <h2 style="margin:0 0 12px 0;font-family:${SANS};font-size:19px;font-weight:700;color:${COLOR_TEXTO};">${escapar(zona.nombre)}</h2>
                   <p style="margin:0 0 16px 0;font-family:${MONO};font-size:14px;color:${COLOR_SUAVE};">${numero(prioritaria.horas_mes)} horas al mes</p>
-                  <p style="margin:0 0 18px 0;font-family:${SANS};font-size:15px;line-height:1.6;color:${COLOR_SUAVE};">${escapar(zona.porQue)}</p>
+                  <p style="margin:0 0 18px 0;font-family:${SANS};font-size:15px;line-height:1.6;color:${COLOR_SUAVE};">${escapar(porQuePosicion(prioritaria.posicion))}</p>
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:${SANS};">${acciones}
                   </table>
                 </td>

@@ -14,25 +14,31 @@ export interface Zona {
   nombre: string;
   afirmacion: string;
   esfuerzo: Esfuerzo;
-  porQue: string; // pantalla 11: por que sale priorizada
   queCuesta: string; // pantalla 11: consecuencia
   acciones: string[]; // pantalla 11: 2-3 acciones realistas
 }
 
 /**
- * §5 — La frase `porQue` se compone según el esfuerzo de la zona.
- * No se escribe zona por zona: se deriva, para que no puedan divergir.
+ * §5 — La frase que explica por qué una zona sale priorizada se compone
+ * según su POSICIÓN en el ranking (1ª, 2ª o 3ª), no según su esfuerzo.
+ *
+ * Componerla desde el esfuerzo era un fallo de lógica: una zona de esfuerzo
+ * bajo puede quedar tercera, y decirle al usuario que «sale primero» algo
+ * que es su tercera prioridad rompe la confianza justo en la pantalla que
+ * más la necesita. Por eso no vive en Zona: es una función de la posición,
+ * y la usan tanto la pantalla 11 como el email (§10).
  */
-const POR_QUE: Record<Esfuerzo, string> = {
-  bajo: 'Sale primero porque es donde más tiempo pierdes y donde antes se nota la mejora.',
-  medio:
-    'Sale arriba porque el tiempo que pierdes compensa el trabajo de ordenar antes el proceso.',
-  alto: 'Es la más laboriosa de las tres, pero las horas que declaras la colocan aquí de todas formas.',
+const POR_QUE_POSICION: Record<1 | 2 | 3, string> = {
+  1: 'Te sale primero porque es donde más tiempo pierdes y donde antes se nota la mejora.',
+  2: 'Es tu segunda prioridad: sigue siendo terreno donde recuperas bastante tiempo con relativamente poco esfuerzo.',
+  3: 'Completa tus tres zonas prioritarias. El impacto es algo menor que en las anteriores, pero conviene no perderla de vista.',
 };
 
-type ZonaSinPorQue = Omit<Zona, 'porQue'>;
+export function porQuePosicion(posicion: 1 | 2 | 3): string {
+  return POR_QUE_POSICION[posicion];
+}
 
-const DEFINICIONES: ZonaSinPorQue[] = [
+const DEFINICIONES: Zona[] = [
   {
     id: 1,
     nombre: 'Entrada de clientes y primera respuesta',
@@ -140,7 +146,7 @@ const DEFINICIONES: ZonaSinPorQue[] = [
   },
 ];
 
-export const ZONAS: Zona[] = DEFINICIONES.map((z) => ({ ...z, porQue: POR_QUE[z.esfuerzo] }));
+export const ZONAS: Zona[] = DEFINICIONES;
 
 export function zonaPorId(id: number): Zona {
   const zona = ZONAS.find((z) => z.id === id);

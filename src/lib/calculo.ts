@@ -60,7 +60,14 @@ export function calcularDiagnostico(respuestas: Respuesta[]): Diagnostico {
     .slice()
     .sort(compararPrioridad)
     .slice(0, 3)
-    .map(({ zona, horasMes: horas }) => ({ zona, horasMes: horas }));
+    .map(({ zona, horasMes: horas }, indice) => ({
+      zona,
+      // La posición en el ranking (1ª, 2ª, 3ª) determina la frase `porQue`
+      // de §5: no puede depender del esfuerzo, porque una zona de esfuerzo
+      // bajo puede quedar tercera.
+      posicion: (indice + 1) as ZonaPrioritaria['posicion'],
+      horasMes: horas,
+    }));
 
   return {
     horasMes,

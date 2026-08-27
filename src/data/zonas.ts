@@ -9,6 +9,7 @@
 export {
   ZONAS,
   zonaPorId,
+  porQuePosicion,
   type Esfuerzo,
   type Zona,
 } from '../../supabase/functions/_shared/zonas.ts';

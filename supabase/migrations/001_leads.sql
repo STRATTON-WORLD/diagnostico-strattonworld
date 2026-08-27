@@ -8,7 +8,11 @@ create table public.leads (
   telefono text,
   num_empleados text not null,
   respuestas jsonb not null,          -- [{zona_id, si, rango}]
-  zonas_prioritarias jsonb not null,  -- [{zona_id, nombre, horas_mes}]
+  zonas_prioritarias jsonb not null,  -- [{zona_id, nombre, horas_mes, posicion}]
+  -- posicion (1/2/3) es el puesto en el ranking de prioridad, no el esfuerzo
+  -- de la zona: determina que frase "por que sale priorizada" se muestra
+  -- (§5). Se guarda explicito para no depender de que el orden del array
+  -- jsonb se preserve en cada lectura posterior.
   horas_mes_calculadas numeric(6,1) not null,
   score_interno text not null check (score_interno in ('caliente','tibio','frio')),
   consentimiento_rgpd boolean not null,
@@ -34,13 +38,15 @@ create policy "insert publico" on public.leads
 -- §9.3 — Contador del hero. Devuelve un entero y nada mas.
 -- Es la unica via por la que el frontend toca esta tabla en lectura.
 --
--- Nota: el linter de Supabase avisa de las funciones security definer sin
--- search_path fijo. Anadir "set search_path = public" a la definicion cierra
--- ese aviso. La spec da el SQL literal, asi que se deja como esta y se decide
--- fuera de aqui.
+-- set search_path = public cierra el aviso del linter de Supabase sobre
+-- funciones security definer sin search_path fijo: sin el, alguien con
+-- permiso para crear objetos en un esquema anterior en el search_path de la
+-- sesion podria hacer que la funcion resuelva a una tabla leads distinta de
+-- la esperada.
 
 create or replace function public.contar_diagnosticos()
-returns integer language sql security definer stable as $$
+returns integer language sql security definer stable
+set search_path = public as $$
   select count(*)::integer from public.leads;
 $$;
 

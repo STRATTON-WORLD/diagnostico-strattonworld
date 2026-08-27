@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { porQuePosicion } from '@/data/zonas';
 import { calcularDiagnostico, sustituirHoras } from '@/lib/calculo';
 import { useDiagnostico } from '@/lib/estado';
 
@@ -14,8 +15,8 @@ export default function ResultadoCompleto() {
       <h1 className="mb-10 text-[28px] sm:text-[36px]">Tus 3 zonas prioritarias</h1>
 
       <ol className="space-y-4">
-        {prioritarias.map((prioritaria, indice) => {
-          const { zona, horasMes } = prioritaria;
+        {prioritarias.map((prioritaria) => {
+          const { zona, posicion, horasMes } = prioritaria;
           return (
             <li
               key={zona.id}
@@ -23,7 +24,7 @@ export default function ResultadoCompleto() {
             >
               <div className="mb-4 flex items-baseline gap-3">
                 {/* La numeración aquí sí informa: es un orden de actuación. */}
-                <span className="dato text-[15px] text-texto-suave">{indice + 1}</span>
+                <span className="dato text-[15px] text-texto-suave">{posicion}</span>
                 <h2 className="text-[19px] leading-snug sm:text-[22px]">{zona.nombre}</h2>
               </div>
 
@@ -31,7 +32,11 @@ export default function ResultadoCompleto() {
                 {Math.round(horasMes)} horas al mes
               </p>
 
-              <p className="mb-4 text-[15px] text-texto-suave">{zona.porQue}</p>
+              {/* La frase depende de la posición real en el ranking (§5),
+                  no del esfuerzo de la zona: si dependiera del esfuerzo,
+                  una zona de esfuerzo bajo en tercer lugar diría «sale
+                  primero» sobre algo que es su tercera prioridad. */}
+              <p className="mb-4 text-[15px] text-texto-suave">{porQuePosicion(posicion)}</p>
 
               <p className="mb-5 text-[15px] text-texto-suave">
                 {sustituirHoras(zona.queCuesta, horasMes)}

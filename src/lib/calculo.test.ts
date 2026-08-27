@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ZONAS } from '@/data/zonas';
+import { porQuePosicion } from '@/data/zonas';
 import { calcularDiagnostico, horasParaGuardar, sustituirHoras } from '@/lib/calculo';
 import { calcularScore } from '@/lib/scoring';
 import type { RangoId, Respuesta } from '@/lib/tipos';
@@ -93,6 +94,27 @@ describe('presentación de las cifras', () => {
 
     expect(d.horasMes).toBe(0);
     expect(d.prioritarias).toEqual([]);
+  });
+
+  it('§5 — la posición depende del puesto en el ranking, no del esfuerzo de la zona', () => {
+    // zona 6 es de esfuerzo alto y queda primera (mayor ratio); zona 1 y
+    // zona 3, de esfuerzo bajo, quedan segunda y tercera. Componer la frase
+    // desde el esfuerzo diría que las dos últimas «salen primero»: el
+    // fallo que se corrige aquí.
+    const d = calcularDiagnostico(respuestas({ 1: '2a5', 3: '2a5', 6: 'mas10' }));
+
+    expect(ids(d)).toEqual([6, 1, 3]);
+    expect(d.prioritarias.map((p) => p.posicion)).toEqual([1, 2, 3]);
+    expect(porQuePosicion(d.prioritarias[0].posicion)).toContain('Te sale primero');
+    expect(porQuePosicion(d.prioritarias[1].posicion)).toContain('segunda prioridad');
+    expect(porQuePosicion(d.prioritarias[2].posicion)).toContain('Completa tus tres');
+  });
+
+  it('§5 — con una sola zona, su posición es 1 aunque el esfuerzo sea alto', () => {
+    const d = calcularDiagnostico(respuestas({ 6: 'mas10' }));
+
+    expect(d.prioritarias).toHaveLength(1);
+    expect(d.prioritarias[0].posicion).toBe(1);
   });
 });
 
