@@ -92,6 +92,7 @@ export default function Captura() {
         nombre: p.zona.nombre,
         horas_mes: horasParaGuardar(p.horasMes),
         posicion: p.posicion,
+        tipo: p.zona.tipo,
       })),
       horas_mes_calculadas: horasParaGuardar(diagnostico.horasMes),
       score_interno: calcularScore({

@@ -8,11 +8,15 @@ create table public.leads (
   telefono text,
   num_empleados text not null,
   respuestas jsonb not null,          -- [{zona_id, si, rango}]
-  zonas_prioritarias jsonb not null,  -- [{zona_id, nombre, horas_mes, posicion}]
+  zonas_prioritarias jsonb not null,  -- [{zona_id, nombre, horas_mes, posicion, tipo}]
   -- posicion (1/2/3) es el puesto en el ranking de prioridad, no el esfuerzo
   -- de la zona: determina que frase "por que sale priorizada" se muestra
   -- (§5). Se guarda explicito para no depender de que el orden del array
   -- jsonb se preserve en cada lectura posterior.
+  -- tipo ('horas'/'riesgo') se guarda tambien explicito, junto a posicion:
+  -- la frase "por que" depende de los dos. Si el tipo de una zona cambiase
+  -- alguna vez en el codigo, un lead ya guardado no debe cambiar de frase
+  -- retroactivamente al generarse su email.
   horas_mes_calculadas numeric(6,1) not null,
   score_interno text not null check (score_interno in ('caliente','tibio','frio')),
   consentimiento_rgpd boolean not null,

@@ -9,6 +9,18 @@
 
 export type Esfuerzo = 'bajo' | 'medio' | 'alto';
 
+/**
+ * Tipo de zona (v2).
+ *
+ * 'horas': el usuario declara cuántas horas semanales le lleva; esa cifra
+ * entra en horasMes y en el nivel de impacto.
+ * 'riesgo': no se le pregunta por horas — «cuántas horas» no tiene una
+ * respuesta honesta para un riesgo de continuidad o un punto ciego. Si
+ * contesta «Sí», el nivel de impacto es alto, fijo, decidido por
+ * STRATTONWORLD y no por el usuario (ver PESO_IMPACTO_RIESGO en calculo.ts).
+ */
+export type TipoZona = 'horas' | 'riesgo';
+
 /** Un dato externo citable: nunca se muestra sin fuente comprobable. */
 export interface DatoCitado {
   texto: string;
@@ -21,10 +33,19 @@ export interface Zona {
   nombre: string;
   afirmacion: string;
   esfuerzo: Esfuerzo;
+  tipo: TipoZona;
+  /**
+   * Solo para tipo 'horas'. Texto de la pregunta de horas semanales que se
+   * muestra tras «Sí»; si no se especifica, se usa el genérico. Zona 2 la
+   * personaliza porque «cuántas horas te lleva» no encajaba con su
+   * afirmación nueva (es sobre seguimiento, no sobre una tarea puntual).
+   */
+  preguntaHoras?: string;
   /**
    * Pregunta 1-8: se muestra al responder «Sí», antes de pedir las horas
-   * semanales. Opcional a propósito — no se inventa para las zonas que
-   * todavía no lo tienen; en esas, la pregunta se comporta como antes.
+   * semanales (o antes de avanzar, en zonas tipo riesgo). Opcional a
+   * propósito — no se inventa para las zonas que todavía no lo tienen; en
+   * esas, la pregunta se comporta como antes.
    */
   solucion?: string;
   /** Acompaña a `solucion`. Solo con fuente verificada, nunca de relleno. */
@@ -34,23 +55,35 @@ export interface Zona {
 }
 
 /**
- * §5 — La frase que explica por qué una zona sale priorizada se compone
- * según su POSICIÓN en el ranking (1ª, 2ª o 3ª), no según su esfuerzo.
+ * §5 (v2) — La frase que explica por qué una zona sale priorizada se
+ * compone según su POSICIÓN en el ranking (1ª, 2ª o 3ª) Y según su TIPO
+ * (horas/riesgo) — no según su esfuerzo.
  *
  * Componerla desde el esfuerzo era un fallo de lógica: una zona de esfuerzo
  * bajo puede quedar tercera, y decirle al usuario que «sale primero» algo
  * que es su tercera prioridad rompe la confianza justo en la pantalla que
- * más la necesita. Por eso no vive en Zona: es una función de la posición,
- * y la usan tanto la pantalla 11 como el email (§10).
+ * más la necesita. El tipo se suma en v2 porque una zona de riesgo nunca
+ * tuvo horas que declarar, así que la frase no puede hablar de «el tiempo
+ * que pierdes» como si las hubiera. Por eso no vive en Zona: es una función
+ * de la posición y el tipo, y la usan tanto la pantalla 11 como el email
+ * (§10) — este último a partir de lo guardado en Supabase, de ahí que
+ * `tipo` viaje también en `zonas_prioritarias` (ver tipos.ts).
  */
-const POR_QUE_POSICION: Record<1 | 2 | 3, string> = {
-  1: 'Te sale primero porque es donde más tiempo pierdes y donde antes se nota la mejora.',
-  2: 'Es tu segunda prioridad: sigue siendo terreno donde recuperas bastante tiempo con relativamente poco esfuerzo.',
-  3: 'Completa tus tres zonas prioritarias. El impacto es algo menor que en las anteriores, pero conviene no perderla de vista.',
+const POR_QUE_POSICION: Record<TipoZona, Record<1 | 2 | 3, string>> = {
+  horas: {
+    1: 'Sale primero porque es donde más tiempo pierdes y donde antes se nota la mejora.',
+    2: 'Sale arriba porque el tiempo que pierdes compensa el trabajo de ordenar antes el proceso.',
+    3: 'Es la más laboriosa de las tres, pero las horas que declaras la colocan aquí de todas formas.',
+  },
+  riesgo: {
+    1: 'Sale entre tus prioridades porque es fácil de resolver y el riesgo que evita compensa de sobra el esfuerzo.',
+    2: 'Sale arriba porque, aunque aquí no se cuenta en horas, es un riesgo que puede parar el negocio en cualquier momento.',
+    3: 'Es la más laboriosa de las tres, pero el riesgo que representa la coloca aquí de todas formas.',
+  },
 };
 
-export function porQuePosicion(posicion: 1 | 2 | 3): string {
-  return POR_QUE_POSICION[posicion];
+export function porQuePosicion(posicion: 1 | 2 | 3, tipo: TipoZona): string {
+  return POR_QUE_POSICION[tipo][posicion];
 }
 
 const DEFINICIONES: Zona[] = [
@@ -60,6 +93,7 @@ const DEFINICIONES: Zona[] = [
     afirmacion:
       'Si un cliente nos escribe un sábado por la tarde, no recibe respuesta hasta el lunes.',
     esfuerzo: 'bajo',
+    tipo: 'riesgo',
     solucion:
       'La solución es implantar un sistema personalizado para la gestión de la primera respuesta.',
     dato: {
@@ -79,8 +113,10 @@ const DEFINICIONES: Zona[] = [
   {
     id: 2,
     nombre: 'Seguimiento comercial y presupuestos',
-    afirmacion: 'Se nos han quedado presupuestos sin seguimiento más de una vez.',
+    afirmacion: 'La mayoría de presupuestos no tienen seguimiento tras mandarlos.',
     esfuerzo: 'medio',
+    tipo: 'horas',
+    preguntaHoras: '¿Cuánto tiempo dedicáis a la semana a intentar hacer ese seguimiento?',
     queCuesta:
       'Un presupuesto sin seguimiento no se pierde por precio, se pierde por silencio. Son {h} horas al mes gestionándolo a mano y, aun así, alguno se cae.',
     acciones: [
@@ -94,6 +130,7 @@ const DEFINICIONES: Zona[] = [
     nombre: 'Citas, agenda y ausencias',
     afirmacion: 'Gestionar citas y avisar de cambios nos quita tiempo cada semana.',
     esfuerzo: 'bajo',
+    tipo: 'horas',
     queCuesta:
       'El tiempo de coordinar, confirmar y recolocar huecos no factura. Y una ausencia sin avisar deja un hueco que casi nunca se rellena.',
     acciones: [
@@ -107,6 +144,7 @@ const DEFINICIONES: Zona[] = [
     nombre: 'Atención al cliente y preguntas repetitivas',
     afirmacion: 'Respondemos las mismas preguntas una y otra vez a distintos clientes.',
     esfuerzo: 'bajo',
+    tipo: 'horas',
     queCuesta:
       '{h} horas al mes contestando lo mismo. El coste no es solo ese tiempo: es la atención que se resta a los clientes que sí necesitan a una persona.',
     acciones: [
@@ -120,6 +158,7 @@ const DEFINICIONES: Zona[] = [
     nombre: 'Administración y documentos',
     afirmacion: 'Preparamos documentos, facturas o informes a mano de forma repetitiva.',
     esfuerzo: 'medio',
+    tipo: 'horas',
     queCuesta:
       'Rehacer a mano un documento que ya existe es trabajo que no añade nada. También es donde aparecen los errores que luego hay que corregir.',
     acciones: [
@@ -133,6 +172,7 @@ const DEFINICIONES: Zona[] = [
     nombre: 'Conocimiento interno y dependencia de personas',
     afirmacion: 'Si una persona concreta falta un día, hay cosas que nadie más sabe hacer.',
     esfuerzo: 'alto',
+    tipo: 'riesgo',
     queCuesta:
       'Cuando el proceso vive en la cabeza de alguien, la empresa se para cada vez que esa persona no está. Es la zona que más limita crecer y también la que más ata al dueño.',
     acciones: [
@@ -146,6 +186,7 @@ const DEFINICIONES: Zona[] = [
     nombre: 'Marketing y contenido',
     afirmacion: 'Nos cuesta mantener publicaciones o comunicación constante con clientes.',
     esfuerzo: 'medio',
+    tipo: 'horas',
     queCuesta:
       'La comunicación irregular no se nota de golpe: se nota en que cada mes entran menos consultas de gente que ya te conocía.',
     acciones: [
@@ -159,6 +200,7 @@ const DEFINICIONES: Zona[] = [
     nombre: 'Datos, informes y control',
     afirmacion: 'No sabría decir con seguridad cuántas oportunidades hemos perdido este mes.',
     esfuerzo: 'alto',
+    tipo: 'riesgo',
     queCuesta:
       'Sin saber cuántas oportunidades entran y cuántas se caen, cualquier decisión sobre precios, personal o publicidad se toma a ciegas.',
     acciones: [

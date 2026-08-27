@@ -1,6 +1,6 @@
 import { valorDeRango } from '@/data/rangos';
 import { zonaPorId } from '@/data/zonas';
-import type { Diagnostico, Esfuerzo, Respuesta, Zona, ZonaPrioritaria } from '@/lib/tipos';
+import type { Diagnostico, Esfuerzo, RangoId, Respuesta, Zona, ZonaPrioritaria } from '@/lib/tipos';
 
 /** §6.2 — Semanas por mes. */
 export const SEMANAS_POR_MES = 4.33;
@@ -15,46 +15,98 @@ export const PESO_ESFUERZO: Record<Esfuerzo, number> = {
   alto: 3,
 };
 
-/** Horas mensuales de una zona a partir de sus horas semanales declaradas. */
-export function horasMesDeZona(respuesta: Respuesta): number {
+/**
+ * v2 — Nivel de impacto (1 bajo, 2 medio, 3 alto), unificado para poder
+ * comparar zonas tipo horas y zonas tipo riesgo en el mismo ranking.
+ *
+ * En zonas tipo horas sale del rango declarado. En zonas tipo riesgo es
+ * siempre 3 (alto): un riesgo de continuidad o un punto ciego del negocio
+ * no es nunca «impacto bajo» por definición — lo decide STRATTONWORLD, no
+ * lo declara el usuario, porque no hay una cifra que el usuario pueda dar
+ * para algo que no se mide en horas.
+ */
+const NIVEL_IMPACTO_POR_RANGO: Record<RangoId, number> = {
+  menos2: 1,
+  '2a5': 2,
+  '5a10': 3,
+  mas10: 3,
+};
+
+export const NIVEL_IMPACTO_RIESGO = 3;
+
+/**
+ * Horas mensuales de una zona a partir de sus horas semanales declaradas.
+ * Solo tiene sentido en zonas tipo horas: una zona tipo riesgo nunca
+ * contribuye a horasMes, aunque venga con un rango en la Respuesta (no
+ * debería, pero si lo trae, se ignora — horasMes debe seguir siendo una
+ * cifra 100% real).
+ */
+export function horasMesDeZona(zona: Zona, respuesta: Respuesta): number {
+  if (zona.tipo !== 'horas') return 0;
   if (!respuesta.si || respuesta.rango === null) return 0;
   return valorDeRango(respuesta.rango) * SEMANAS_POR_MES;
 }
 
+interface Candidata {
+  zona: Zona;
+  nivelImpacto: number;
+  peso: number;
+  ratio: number;
+  horasMes: number;
+}
+
 /**
- * §6.3 — Orden de prioridad.
- * ratio = valorRango ÷ pesoEsfuerzo, de mayor a menor.
- * Desempate estricto: mayor valorRango, menor peso de esfuerzo, menor id.
- * La cadena termina en el id, que es único: el orden es total y por tanto
+ * §6.3 (v2) — Orden de prioridad.
+ * ratio = nivelImpacto ÷ pesoEsfuerzo, de mayor a menor.
+ * Desempate: menor id de zona. Es el único criterio de desempate porque el
+ * esfuerzo ya está dentro del ratio (como denominador) y el nivel de
+ * impacto ya no es un valor continuo comparable entre tipos de zona — no
+ * tendría sentido desempatar por «quién declaró más horas» cuando una de
+ * las dos zonas empatadas puede no haber declarado horas en absoluto.
+ * La cadena sigue terminando en el id, que es único: el orden es total y
  * el mismo input devuelve siempre exactamente el mismo resultado.
  */
-function compararPrioridad(
-  a: { zona: Zona; valor: number; peso: number; ratio: number },
-  b: { zona: Zona; valor: number; peso: number; ratio: number }
-): number {
+function compararPrioridad(a: Candidata, b: Candidata): number {
   if (a.ratio !== b.ratio) return b.ratio - a.ratio;
-  if (a.valor !== b.valor) return b.valor - a.valor;
-  if (a.peso !== b.peso) return a.peso - b.peso;
   return a.zona.id - b.zona.id;
 }
 
 /**
- * §6.2 y §6.3 — Motor completo.
+ * §6.2 y §6.3 — Motor completo (v2).
  * No redondea nada: el redondeo es responsabilidad de quien presenta.
  */
 export function calcularDiagnostico(respuestas: Respuesta[]): Diagnostico {
-  const marcadas = respuestas
-    .filter((r) => r.si && r.rango !== null)
-    .sort((a, b) => a.zonaId - b.zonaId);
+  const contestadas = respuestas
+    .filter((r) => r.si === true)
+    .sort((a, b) => a.zonaId - b.zonaId)
+    .map((r) => ({ respuesta: r, zona: zonaPorId(r.zonaId) }));
 
-  const horasMes = marcadas.reduce((suma, r) => suma + horasMesDeZona(r), 0);
+  // horasMes solo suma zonas tipo horas con rango elegido. Una zona tipo
+  // horas marcada «Sí» pero todavía sin rango (a medio responder) no cuenta
+  // — igual que antes. Una zona tipo riesgo nunca cuenta, tenga o no rango.
+  const horasMes = contestadas.reduce(
+    (suma, { zona, respuesta }) => suma + horasMesDeZona(zona, respuesta),
+    0
+  );
 
-  const candidatas = marcadas.map((r) => {
-    const zona = zonaPorId(r.zonaId);
-    const valor = valorDeRango(r.rango!);
-    const peso = PESO_ESFUERZO[zona.esfuerzo];
-    return { zona, valor, peso, ratio: valor / peso, horasMes: horasMesDeZona(r) };
-  });
+  // Candidatas a prioridad: zonas horas con rango elegido, o zonas riesgo
+  // con «Sí» (sin necesitar rango — no se les pregunta por horas).
+  const candidatas: Candidata[] = contestadas
+    .filter(
+      ({ zona, respuesta }) => (zona.tipo === 'horas' && respuesta.rango !== null) || zona.tipo === 'riesgo'
+    )
+    .map(({ zona, respuesta }) => {
+      const nivelImpacto =
+        zona.tipo === 'riesgo' ? NIVEL_IMPACTO_RIESGO : NIVEL_IMPACTO_POR_RANGO[respuesta.rango!];
+      const peso = PESO_ESFUERZO[zona.esfuerzo];
+      return {
+        zona,
+        nivelImpacto,
+        peso,
+        ratio: nivelImpacto / peso,
+        horasMes: horasMesDeZona(zona, respuesta),
+      };
+    });
 
   const prioritarias: ZonaPrioritaria[] = candidatas
     .slice()
@@ -74,7 +126,7 @@ export function calcularDiagnostico(respuestas: Respuesta[]): Diagnostico {
     horasAño: horasMes * 12,
     jornadas: (horasMes * 12) / HORAS_POR_JORNADA,
     prioritarias,
-    zonasSi: marcadas.map((r) => r.zonaId),
+    zonasSi: contestadas.map(({ respuesta }) => respuesta.zonaId),
   };
 }
 

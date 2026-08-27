@@ -4,9 +4,9 @@
 
 // Esfuerzo y Zona se definen junto al contenido de las zonas, que es
 // compartido con la Edge Function del informe (§10).
-import type { Esfuerzo, Zona } from '../../supabase/functions/_shared/zonas.ts';
+import type { Esfuerzo, TipoZona, Zona } from '../../supabase/functions/_shared/zonas.ts';
 
-export type { Esfuerzo, Zona };
+export type { Esfuerzo, TipoZona, Zona };
 
 export type RangoId = 'menos2' | '2a5' | '5a10' | 'mas10';
 
@@ -64,6 +64,12 @@ export interface Lead {
     nombre: string;
     horas_mes: number;
     posicion: Posicion;
+    /**
+     * Guardado explícito, no re-derivado de zonaPorId al enviar el email:
+     * si el tipo de una zona cambiase alguna vez, un lead antiguo no debe
+     * cambiar de frase `porQue` retroactivamente.
+     */
+    tipo: TipoZona;
   }>;
   horas_mes_calculadas: number;
   score_interno: ScoreInterno;

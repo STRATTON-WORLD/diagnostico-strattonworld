@@ -12,7 +12,10 @@ export default function ResultadoCompleto() {
 
   return (
     <section className="aparece py-16">
-      <h1 className="mb-10 text-[28px] sm:text-[36px]">Tus 3 zonas prioritarias</h1>
+      <h1 className="mb-3 text-[28px] sm:text-[36px]">Tus 3 zonas prioritarias</h1>
+      <p className="mb-10 text-[15px] text-texto-suave">
+        Esto es lo que hemos visto en tus respuestas — no el mapa general, el tuyo.
+      </p>
 
       <ol className="space-y-4">
         {prioritarias.map((prioritaria) => {
@@ -28,15 +31,24 @@ export default function ResultadoCompleto() {
                 <h2 className="text-[19px] leading-snug sm:text-[22px]">{zona.nombre}</h2>
               </div>
 
-              <p className="dato mb-5 text-[15px] text-texto-suave">
-                {Math.round(horasMes)} horas al mes
-              </p>
+              {/* Una zona tipo riesgo nunca tuvo horas que declarar — no hay
+                  cifra honesta que mostrar aquí, así que la línea se omite
+                  en vez de enseñar «0 horas al mes». */}
+              {zona.tipo === 'horas' && (
+                <p className="dato mb-5 text-[15px] text-texto-suave">
+                  {Math.round(horasMes)} horas al mes
+                </p>
+              )}
 
-              {/* La frase depende de la posición real en el ranking (§5),
-                  no del esfuerzo de la zona: si dependiera del esfuerzo,
-                  una zona de esfuerzo bajo en tercer lugar diría «sale
-                  primero» sobre algo que es su tercera prioridad. */}
-              <p className="mb-4 text-[15px] text-texto-suave">{porQuePosicion(posicion)}</p>
+              {/* La frase depende de la posición real en el ranking y del
+                  tipo de zona (§5), no del esfuerzo: si dependiera del
+                  esfuerzo, una zona de esfuerzo bajo en tercer lugar diría
+                  «sale primero» sobre algo que es su tercera prioridad; y
+                  una zona de riesgo no puede hablar de «el tiempo que
+                  pierdes» porque nunca declaró horas. */}
+              <p className="mb-4 text-[15px] text-texto-suave">
+                {porQuePosicion(posicion, zona.tipo)}
+              </p>
 
               <p className="mb-5 text-[15px] text-texto-suave">
                 {sustituirHoras(zona.queCuesta, horasMes)}

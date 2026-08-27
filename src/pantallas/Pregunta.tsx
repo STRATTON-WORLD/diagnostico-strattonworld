@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react';
 import BarraProgreso from '@/componentes/BarraProgreso';
+import BotonPrincipal from '@/componentes/BotonPrincipal';
 import TarjetaOpcion from '@/componentes/TarjetaOpcion';
 import { RANGOS } from '@/data/rangos';
 import { ZONAS } from '@/data/zonas';
 import { TOTAL_PREGUNTAS, useDiagnostico } from '@/lib/estado';
 import type { RangoId } from '@/lib/tipos';
+
+const PREGUNTA_HORAS_GENERICA = '¿Cuántas horas a la semana te lleva?';
 
 /** §8.1-8.8 — «No» y la elección de rango avanzan solas tras 250ms. */
 const ESPERA_ANTES_DE_AVANZAR = 250;
@@ -36,13 +39,27 @@ export default function Pregunta() {
   const responder = (si: boolean) => {
     cancelarAvance();
     actualizar({ tipo: 'responder', zonaId: zona.id, si });
-    if (!si) programarAvance();
+    if (!si) {
+      programarAvance();
+      return;
+    }
+    // Zona tipo riesgo sin `solucion` todavía: no hay nada que leer ni que
+    // elegir, así que avanza sola igual que «No». Con `solucion`, se espera
+    // al botón «Continuar» — mostrarla 250ms y quitarla derrotaría el
+    // propósito de haberla puesto. Zona tipo horas no avanza aquí: falta
+    // elegir un rango (ver elegirRango).
+    if (zona.tipo === 'riesgo' && !zona.solucion) programarAvance();
   };
 
   const elegirRango = (rango: RangoId) => {
     cancelarAvance();
     actualizar({ tipo: 'elegirRango', zonaId: zona.id, rango });
     programarAvance();
+  };
+
+  const continuar = () => {
+    cancelarAvance();
+    navegar({ tipo: 'avanzar' });
   };
 
   // Al cambiar de pregunta: limpiar cualquier avance pendiente y llevar el
@@ -127,10 +144,12 @@ export default function Pregunta() {
         </div>
       )}
 
-      {respuesta.si === true && (
+      {/* Solo zonas tipo horas: en riesgo no hay una respuesta honesta a
+          «cuántas horas te lleva» (§ cambio_1). */}
+      {respuesta.si === true && zona.tipo === 'horas' && (
         <div className="aparece mt-8">
           <p id={idPreguntaHoras} className="mb-4 text-[17px] text-texto-suave">
-            ¿Cuántas horas a la semana te lleva?
+            {zona.preguntaHoras ?? PREGUNTA_HORAS_GENERICA}
           </p>
           <div
             role="radiogroup"
@@ -148,6 +167,16 @@ export default function Pregunta() {
               </TarjetaOpcion>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Zona tipo riesgo con solución mostrada: no hay rango que elegir,
+          así que el propio usuario decide cuándo seguir en vez de un
+          temporizador que le corte la lectura. Sin `solucion`, `responder`
+          ya programa el avance automático y este botón no llega a pintarse. */}
+      {respuesta.si === true && zona.tipo === 'riesgo' && zona.solucion && (
+        <div className="aparece mt-8">
+          <BotonPrincipal onClick={continuar}>Continuar</BotonPrincipal>
         </div>
       )}
 

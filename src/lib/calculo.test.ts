@@ -1,17 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { ZONAS } from '@/data/zonas';
-import { porQuePosicion } from '@/data/zonas';
+import { porQuePosicion, ZONAS } from '@/data/zonas';
 import { calcularDiagnostico, horasParaGuardar, sustituirHoras } from '@/lib/calculo';
 import { calcularScore } from '@/lib/scoring';
 import type { RangoId, Respuesta } from '@/lib/tipos';
 
-/** Construye el juego de 8 respuestas a partir de las zonas marcadas «Sí». */
-function respuestas(marcadas: Record<number, RangoId>): Respuesta[] {
-  return ZONAS.map((z) => ({
-    zonaId: z.id,
-    si: z.id in marcadas,
-    rango: marcadas[z.id] ?? null,
-  }));
+/**
+ * Construye el juego de 8 respuestas a partir de las zonas marcadas «Sí».
+ * `true` marca «Sí» sin rango — el caso normal en una zona tipo riesgo, que
+ * nunca pregunta por horas. Un `RangoId` marca «Sí» con ese rango elegido.
+ */
+function respuestas(marcadas: Record<number, RangoId | true>): Respuesta[] {
+  return ZONAS.map((z) => {
+    const valor = marcadas[z.id];
+    return {
+      zonaId: z.id,
+      si: valor !== undefined,
+      rango: typeof valor === 'string' ? valor : null,
+    };
+  });
 }
 
 const ids = (d: ReturnType<typeof calcularDiagnostico>) => d.prioritarias.map((p) => p.zona.id);
@@ -27,7 +33,7 @@ describe('§6.4 — casos obligatorios del motor de cálculo', () => {
     expect(d.zonasSi).toEqual([]);
   });
 
-  it('una sola zona «Sí»: devuelve una prioritaria, no tres', () => {
+  it('una sola zona «Sí» tipo horas: devuelve una prioritaria, no tres', () => {
     const d = calcularDiagnostico(respuestas({ 3: '5a10' }));
 
     expect(d.prioritarias).toHaveLength(1);
@@ -35,27 +41,41 @@ describe('§6.4 — casos obligatorios del motor de cálculo', () => {
     expect(d.horasMes).toBeCloseTo(7.5 * 4.33, 10);
   });
 
-  it('ocho zonas «Sí» con mas10: 415,68 horas al mes, se muestran 416, prioritarias 1-3-4', () => {
+  it('ocho zonas «Sí» con mas10: horasMes solo suma las 5 zonas tipo horas (2,3,4,5,7)', () => {
+    // Las tres zonas tipo riesgo (1, 6, 8) marcadas «Sí» nunca contribuyen a
+    // horasMes, aunque este helper les pase un rango — se ignora.
     const todas = Object.fromEntries(ZONAS.map((z) => [z.id, 'mas10'])) as Record<number, RangoId>;
     const d = calcularDiagnostico(respuestas(todas));
 
-    expect(d.horasMes).toBeCloseTo(415.68, 10);
-    expect(Math.round(d.horasMes)).toBe(416);
+    expect(d.horasMes).toBeCloseTo(5 * 12 * 4.33, 10); // 259,8
+    expect(Math.round(d.horasMes)).toBe(260);
+    // Prioritarias: zonas 1, 3, 4 empatan a ratio 3 (impacto alto ÷ esfuerzo
+    // bajo) y ganan a las demás por id.
     expect(ids(d)).toEqual([1, 3, 4]);
   });
 
-  it('empate real entre zonas 1, 3 y 5: el orden esperado es 5, 1, 3', () => {
-    // zona 5 (medio, mas10) ratio 6 · zona 1 (bajo, 2a5) ratio 3,5 · zona 3 (bajo, 2a5) ratio 3,5
-    const d = calcularDiagnostico(respuestas({ 1: '2a5', 3: '2a5', 5: 'mas10' }));
+  it('empate real a ratio 1 entre una zona horas y dos zonas riesgo: gana el id', () => {
+    // zona 3 (horas, bajo, 'menos2') → impacto 1 ÷ esfuerzo 1 = ratio 1
+    // zona 6 (riesgo, alto) → impacto 3 ÷ esfuerzo 3 = ratio 1
+    // zona 8 (riesgo, alto) → impacto 3 ÷ esfuerzo 3 = ratio 1
+    // zona 2 (horas, medio, 'menos2') → impacto 1 ÷ esfuerzo 2 = ratio 0,5,
+    // no entra: queda para comprobar que el empate no se cuela con ella.
+    const d = calcularDiagnostico(
+      respuestas({ 3: 'menos2', 6: true, 8: true, 2: 'menos2' })
+    );
 
-    expect(ids(d)).toEqual([5, 1, 3]);
+    expect(ids(d)).toEqual([3, 6, 8]);
   });
 
-  it('esfuerzo alto con mas10 (ratio 4) por delante de esfuerzo bajo con 2a5 (ratio 3,5)', () => {
-    // zona 6 es de esfuerzo alto; zona 1 es de esfuerzo bajo.
-    const d = calcularDiagnostico(respuestas({ 1: '2a5', 6: 'mas10' }));
+  it('una zona de riesgo puede superar a una zona de horas de ratio menor, y entra en el top 3', () => {
+    // zona 1 (riesgo, bajo) → ratio 3, fijo con «Sí».
+    // zona 2 (horas, medio, '2a5') → impacto 2 ÷ esfuerzo 2 = ratio 1.
+    const d = calcularDiagnostico(respuestas({ 1: true, 2: '2a5' }));
 
-    expect(ids(d)).toEqual([6, 1]);
+    expect(ids(d)).toEqual([1, 2]);
+    expect(d.prioritarias[0].zona.tipo).toBe('riesgo');
+    // La zona de riesgo nunca declaró horas: su horasMes de zona es 0.
+    expect(d.prioritarias[0].horasMes).toBe(0);
   });
 
   it('determinismo: veinte ejecuciones del mismo input devuelven el mismo orden', () => {
@@ -68,9 +88,35 @@ describe('§6.4 — casos obligatorios del motor de cálculo', () => {
   });
 });
 
+describe('v2 — zonas tipo riesgo no contribuyen a horasMes', () => {
+  it('tres zonas de riesgo marcadas «Sí»: horasMes sigue siendo 0, y las tres entran en prioritarias', () => {
+    const d = calcularDiagnostico(respuestas({ 1: true, 6: true, 8: true }));
+
+    expect(d.horasMes).toBe(0);
+    expect(d.prioritarias).toHaveLength(3);
+    expect(ids(d)).toEqual([1, 6, 8]);
+  });
+
+  it('un «Sí» sin rango en zona tipo horas no suma horas ni entra en prioritarias (respuesta incompleta)', () => {
+    const d = calcularDiagnostico([{ zonaId: 3, si: true, rango: null }]);
+
+    expect(d.horasMes).toBe(0);
+    expect(d.prioritarias).toEqual([]);
+  });
+
+  it('un «Sí» sin rango en zona tipo riesgo es el caso normal: entra en prioritarias con horasMes 0', () => {
+    const d = calcularDiagnostico([{ zonaId: 1, si: true, rango: null }]);
+
+    expect(d.horasMes).toBe(0);
+    expect(d.prioritarias).toHaveLength(1);
+    expect(d.prioritarias[0].zona.id).toBe(1);
+    expect(d.prioritarias[0].horasMes).toBe(0);
+  });
+});
+
 describe('presentación de las cifras', () => {
-  it('las horas de cada zona prioritaria son las de esa zona, no el total', () => {
-    const d = calcularDiagnostico(respuestas({ 1: 'menos2', 4: 'mas10' }));
+  it('las horas de cada zona prioritaria tipo horas son las de esa zona, no el total', () => {
+    const d = calcularDiagnostico(respuestas({ 3: 'menos2', 4: 'mas10' }));
 
     expect(d.prioritarias[0].zona.id).toBe(4);
     expect(d.prioritarias[0].horasMes).toBeCloseTo(12 * 4.33, 10);
@@ -89,32 +135,33 @@ describe('presentación de las cifras', () => {
     expect(horasParaGuardar(4.33)).toBe(4.3);
   });
 
-  it('un «Sí» sin rango no suma horas ni entra en prioritarias', () => {
-    const d = calcularDiagnostico([{ zonaId: 1, si: true, rango: null }]);
+  it('§5 (v2) — la frase porQue depende de la posición Y del tipo de zona, no del esfuerzo', () => {
+    // zona 1 (riesgo, bajo) → ratio 3, queda 1ª.
+    // zona 3 (horas, bajo, '2a5') → impacto 2 ÷ esfuerzo 1 = ratio 2, queda 2ª.
+    // zona 6 (riesgo, alto) → ratio 1, queda 3ª.
+    // Componer la frase desde el esfuerzo diría que la zona 6 (esfuerzo
+    // alto) es «la más laboriosa» por esfuerzo, y de hecho lo es — pero
+    // aquí se comprueba que la frase depende de la POSICIÓN real (3ª),
+    // no de que su esfuerzo sea alto por sí solo, y que además elige el
+    // set de frases correcto según si la zona es de horas o de riesgo.
+    const d = calcularDiagnostico(respuestas({ 1: true, 3: '2a5', 6: true }));
 
-    expect(d.horasMes).toBe(0);
-    expect(d.prioritarias).toEqual([]);
-  });
-
-  it('§5 — la posición depende del puesto en el ranking, no del esfuerzo de la zona', () => {
-    // zona 6 es de esfuerzo alto y queda primera (mayor ratio); zona 1 y
-    // zona 3, de esfuerzo bajo, quedan segunda y tercera. Componer la frase
-    // desde el esfuerzo diría que las dos últimas «salen primero»: el
-    // fallo que se corrige aquí.
-    const d = calcularDiagnostico(respuestas({ 1: '2a5', 3: '2a5', 6: 'mas10' }));
-
-    expect(ids(d)).toEqual([6, 1, 3]);
+    expect(ids(d)).toEqual([1, 3, 6]);
     expect(d.prioritarias.map((p) => p.posicion)).toEqual([1, 2, 3]);
-    expect(porQuePosicion(d.prioritarias[0].posicion)).toContain('Te sale primero');
-    expect(porQuePosicion(d.prioritarias[1].posicion)).toContain('segunda prioridad');
-    expect(porQuePosicion(d.prioritarias[2].posicion)).toContain('Completa tus tres');
+    expect(d.prioritarias.map((p) => p.zona.tipo)).toEqual(['riesgo', 'horas', 'riesgo']);
+
+    const [p1, p2, p3] = d.prioritarias;
+    expect(porQuePosicion(p1.posicion, p1.zona.tipo)).toContain('Sale entre tus prioridades');
+    expect(porQuePosicion(p2.posicion, p2.zona.tipo)).toContain('el tiempo que pierdes compensa');
+    expect(porQuePosicion(p3.posicion, p3.zona.tipo)).toContain('el riesgo que representa');
   });
 
-  it('§5 — con una sola zona, su posición es 1 aunque el esfuerzo sea alto', () => {
-    const d = calcularDiagnostico(respuestas({ 6: 'mas10' }));
+  it('§5 (v2) — con una sola zona tipo riesgo, su posición es 1 aunque su esfuerzo sea alto', () => {
+    const d = calcularDiagnostico(respuestas({ 6: true }));
 
     expect(d.prioritarias).toHaveLength(1);
     expect(d.prioritarias[0].posicion).toBe(1);
+    expect(porQuePosicion(1, 'riesgo')).toContain('Sale entre tus prioridades');
   });
 });
 
