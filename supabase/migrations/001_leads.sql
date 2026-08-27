@@ -16,6 +16,9 @@ create table public.leads (
   horas_mes_calculadas numeric(6,1) not null,
   score_interno text not null check (score_interno in ('caliente','tibio','frio')),
   consentimiento_rgpd boolean not null,
+  -- Checkbox independiente del de RGPD, opcional y desmarcado por defecto:
+  -- no bloquea el envio del formulario si se deja sin marcar.
+  newsletter_opt_in boolean not null default false,
   informe_enviado boolean not null default false
 );
 

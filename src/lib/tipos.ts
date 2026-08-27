@@ -68,4 +68,6 @@ export interface Lead {
   horas_mes_calculadas: number;
   score_interno: ScoreInterno;
   consentimiento_rgpd: boolean;
+  /** Checkbox independiente del RGPD, opcional, desmarcado por defecto. */
+  newsletter_opt_in: boolean;
 }

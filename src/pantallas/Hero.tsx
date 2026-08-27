@@ -1,45 +1,18 @@
-import { useEffect, useState } from 'react';
-import Badge from '@/componentes/Badge';
 import BotonPrincipal from '@/componentes/BotonPrincipal';
 import { useDiagnostico } from '@/lib/estado';
-import { contarDiagnosticos } from '@/lib/supabase';
 
 /**
- * §8.0 — Hero.
- * El badge solo aparece con un numero real y a partir de 25: un contador que
- * dice «3» resta credibilidad, y ninguno no resta nada.
+ * §8.0 — Hero de /diagnostico.
+ *
+ * El badge del contador ya no vive aquí: vive en el hero de la landing de
+ * la raíz, que es lo primero que ve el visitante. Mostrarlo también aquí
+ * repetiría la misma señal de confianza dos veces en el mismo recorrido.
  */
-const MINIMO_PARA_MOSTRAR = 25;
-
 export default function Hero() {
   const { navegar } = useDiagnostico();
-  const [diagnosticos, setDiagnosticos] = useState<number | null>(null);
-
-  useEffect(() => {
-    let vigente = true;
-    void contarDiagnosticos().then((n) => {
-      if (vigente) setDiagnosticos(n);
-    });
-    return () => {
-      vigente = false;
-    };
-  }, []);
-
-  const mostrarBadge = diagnosticos !== null && diagnosticos >= MINIMO_PARA_MOSTRAR;
 
   return (
     <section className="aparece flex min-h-dvh flex-col justify-center py-10">
-      {mostrarBadge && (
-        <div className="mb-8">
-          <Badge mayusculas={false}>
-            <span>
-              <span className="dato">{diagnosticos.toLocaleString('es-ES')}</span> dueños de pyme ya
-              han hecho su diagnóstico
-            </span>
-          </Badge>
-        </div>
-      )}
-
       <h1 className="mb-6 text-[32px] sm:text-[46px]">
         Averigua en <span className="text-acento">2 minutos</span> dónde le está robando tiempo tu
         empresa cada semana

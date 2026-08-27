@@ -31,6 +31,8 @@ export default function Captura() {
   const [numEmpleados, setNumEmpleados] = useState<NumEmpleados | ''>('');
   const [telefono, setTelefono] = useState('');
   const [consentimiento, setConsentimiento] = useState(false);
+  // Opcional e independiente del RGPD: no entra en `completo`, no bloquea el envío.
+  const [newsletter, setNewsletter] = useState(false);
   const [trampa, setTrampa] = useState('');
   const [errores, setErrores] = useState<Errores>({});
   const [enviando, setEnviando] = useState(false);
@@ -40,6 +42,7 @@ export default function Captura() {
   const idEmpleados = useId();
   const idTelefono = useId();
   const idConsentimiento = useId();
+  const idNewsletter = useId();
 
   const completo =
     nombre.trim() !== '' && email.trim() !== '' && numEmpleados !== '' && consentimiento;
@@ -98,6 +101,7 @@ export default function Captura() {
         horasMes: diagnostico.horasMes,
       }),
       consentimiento_rgpd: consentimiento,
+      newsletter_opt_in: newsletter,
     };
 
     try {
@@ -249,6 +253,23 @@ export default function Captura() {
             ) : (
               'Política de privacidad'
             )}
+          </Label>
+        </div>
+
+        {/* Independiente del RGPD: desmarcado por defecto, opcional, no
+            bloquea el envío. */}
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id={idNewsletter}
+            checked={newsletter}
+            onCheckedChange={(valor) => setNewsletter(valor === true)}
+            className="mt-1 size-5 shrink-0 border-borde data-[state=checked]:border-acento data-[state=checked]:bg-acento"
+          />
+          <Label
+            htmlFor={idNewsletter}
+            className="block text-[14px] leading-relaxed font-normal text-texto-suave"
+          >
+            Quiero recibir también contenido de STRATTONWORLD sobre IA aplicada a mi negocio.
           </Label>
         </div>
 
