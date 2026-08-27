@@ -2,19 +2,13 @@
  * Tipos compartidos. §5, §6, §7.
  */
 
-export type Esfuerzo = 'bajo' | 'medio' | 'alto';
+// Esfuerzo y Zona se definen junto al contenido de las zonas, que es
+// compartido con la Edge Function del informe (§10).
+import type { Esfuerzo, Zona } from '../../supabase/functions/_shared/zonas.ts';
+
+export type { Esfuerzo, Zona };
 
 export type RangoId = 'menos2' | '2a5' | '5a10' | 'mas10';
-
-export interface Zona {
-  id: number; // 1-8, define también el orden y el desempate final
-  nombre: string;
-  afirmacion: string;
-  esfuerzo: Esfuerzo;
-  porQue: string; // pantalla 11: por qué sale priorizada
-  queCuesta: string; // pantalla 11: consecuencia
-  acciones: string[]; // pantalla 11: 2-3 acciones realistas
-}
 
 export interface Rango {
   id: RangoId;
