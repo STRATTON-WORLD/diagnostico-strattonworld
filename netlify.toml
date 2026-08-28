@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Necesario porque el enrutado ('/', '/diagnostico') vive del lado del
+# cliente (react-router). Sin esto, recargar o enlazar directo a
+# /diagnostico devolvería un 404 de Netlify en vez de la app.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -13,3 +13,6 @@ npm-debug.log*
 .vite
 coverage
 *.tsbuildinfo
+
+# Local Netlify folder
+.netlify
