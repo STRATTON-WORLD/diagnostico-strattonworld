@@ -86,6 +86,17 @@ export function porQuePosicion(posicion: 1 | 2 | 3, tipo: TipoZona): string {
   return POR_QUE_POSICION[tipo][posicion];
 }
 
+/**
+ * Pantalla 11 y email (§10) — titular según cuántas zonas prioritarias hay
+ * de verdad. Máximo 3 por diseño (§6.3), pero puede haber 1 o 2 si el
+ * usuario marcó menos preguntas con «Sí». En singular no lleva número:
+ * «Tus 1 zonas» no concuerda.
+ */
+export function tituloPrioritarias(cantidad: number): string {
+  if (cantidad === 1) return 'Tu zona prioritaria';
+  return `Tus ${cantidad} zonas prioritarias`;
+}
+
 const DEFINICIONES: Zona[] = [
   {
     id: 1,

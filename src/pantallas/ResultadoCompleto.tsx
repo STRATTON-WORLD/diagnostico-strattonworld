@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { porQuePosicion } from '@/data/zonas';
+import { porQuePosicion, tituloPrioritarias } from '@/data/zonas';
 import { calcularDiagnostico, sustituirHoras } from '@/lib/calculo';
 import { useDiagnostico } from '@/lib/estado';
 
@@ -12,7 +12,7 @@ export default function ResultadoCompleto() {
 
   return (
     <section className="aparece py-16">
-      <h1 className="mb-3 text-[28px] sm:text-[36px]">Tus 3 zonas prioritarias</h1>
+      <h1 className="mb-3 text-[28px] sm:text-[36px]">{tituloPrioritarias(prioritarias.length)}</h1>
       <p className="mb-10 text-[15px] text-texto-suave">
         Esto es lo que hemos visto en tus respuestas — no el mapa general, el tuyo.
       </p>

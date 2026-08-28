@@ -10,6 +10,7 @@ export {
   ZONAS,
   zonaPorId,
   porQuePosicion,
+  tituloPrioritarias,
   type Esfuerzo,
   type Zona,
   type TipoZona,

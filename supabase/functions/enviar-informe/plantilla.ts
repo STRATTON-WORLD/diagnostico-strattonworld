@@ -1,4 +1,4 @@
-import { porQuePosicion, ZONAS } from '../_shared/zonas.ts';
+import { porQuePosicion, tituloPrioritarias, ZONAS } from '../_shared/zonas.ts';
 
 /**
  * §10 — Plantilla del email.
@@ -78,7 +78,7 @@ export function textoPlano(datos: DatosInforme): string {
     'Es el tiempo que hoy dedicas a trabajo que, en su mayor parte, no debería necesitarte.'
   );
   lineas.push('');
-  lineas.push('TUS 3 ZONAS PRIORITARIAS');
+  lineas.push(tituloPrioritarias(datos.prioritarias.length).toUpperCase());
 
   datos.prioritarias.forEach((prioritaria) => {
     const zona = contenidoDeZona(prioritaria.zona_id);
@@ -185,7 +185,7 @@ export function html(datos: DatosInforme): string {
             </tr>
             <tr>
               <td style="padding:0 0 16px 0;font-family:${SANS};font-size:22px;font-weight:700;color:${COLOR_TEXTO};">
-                Tus 3 zonas prioritarias
+                ${escapar(tituloPrioritarias(datos.prioritarias.length))}
               </td>
             </tr>
           </table>
