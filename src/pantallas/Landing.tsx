@@ -49,9 +49,7 @@ export default function Landing() {
       <div className="contenedor">
         {/* Hero */}
         <section className="aparece flex min-h-dvh flex-col justify-center py-10">
-          <div className="mb-8">
-            <BadgeContador />
-          </div>
+          <BadgeContador />
 
           <h1 className="mb-6 text-[32px] sm:text-[46px]">
             Dónde aplicar la IA en una empresa de menos de 10 personas

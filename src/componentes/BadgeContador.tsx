@@ -12,7 +12,7 @@ export default function BadgeContador() {
   const { diagnosticos } = resultado;
 
   return (
-    <Badge mayusculas={false}>
+    <Badge mayusculas={false} className="mb-8">
       <span>
         <span className="dato">{diagnosticos.toLocaleString('es-ES')}</span> dueños de pyme ya han
         hecho su diagnóstico
