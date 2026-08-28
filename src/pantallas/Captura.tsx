@@ -234,7 +234,7 @@ export default function Captura() {
             id={idConsentimiento}
             checked={consentimiento}
             onCheckedChange={(valor) => setConsentimiento(valor === true)}
-            className="mt-1 size-5 shrink-0 border-borde data-[state=checked]:border-acento data-[state=checked]:bg-acento"
+            className="mt-1 size-5 shrink-0 border-borde-interactivo data-[state=checked]:border-acento data-[state=checked]:bg-acento"
           />
           <Label
             htmlFor={idConsentimiento}
@@ -264,7 +264,7 @@ export default function Captura() {
             id={idNewsletter}
             checked={newsletter}
             onCheckedChange={(valor) => setNewsletter(valor === true)}
-            className="mt-1 size-5 shrink-0 border-borde data-[state=checked]:border-acento data-[state=checked]:bg-acento"
+            className="mt-1 size-5 shrink-0 border-borde-interactivo data-[state=checked]:border-acento data-[state=checked]:bg-acento"
           />
           <Label
             htmlFor={idNewsletter}

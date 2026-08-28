@@ -57,6 +57,13 @@
      de §8.10 piden "rojo sobrio". No se usa en ningun otro sitio. */
   --error: #f87171;
 
+  /* Segunda excepcion puntual: el borde generico (--borde, 8% de blanco)
+     esta pensado para bordes decorativos de tarjeta, no para algo con lo
+     que hay que interactuar. Los checkboxes de la pantalla de captura
+     (RGPD y newsletter) lo usaban y quedaban casi invisibles en un
+     dispositivo real. Solo se usa ahi. */
+  --borde-interactivo: rgba(255, 255, 255, 0.35);
+
   /* Nombres semanticos que esperan los componentes de shadcn/ui (§2),
      apuntando a la paleta de §4.1. Ni un color nuevo. */
   --background: var(--fondo);
@@ -89,6 +96,7 @@
   --color-acento: var(--acento);
   --color-acento-tenue: var(--acento-tenue);
   --color-error: var(--error);
+  --color-borde-interactivo: var(--borde-interactivo);
 
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'Geist Mono', 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
