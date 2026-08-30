@@ -112,10 +112,10 @@ export default function Pregunta() {
 
       <div role="radiogroup" aria-labelledby={idAfirmacion} className="grid gap-3 sm:grid-cols-2">
         <TarjetaOpcion seleccionada={respuesta.si === true} onSeleccionar={() => responder(true)}>
-          Sí
+          Sí, nos pasa
         </TarjetaOpcion>
         <TarjetaOpcion seleccionada={respuesta.si === false} onSeleccionar={() => responder(false)}>
-          No
+          No, no nos pasa
         </TarjetaOpcion>
       </div>
 
